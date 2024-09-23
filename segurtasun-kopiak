@@ -11,11 +11,16 @@ if [ ! -d /media/usb ]; then
   exit 1
 fi
 
-# USB unitatea muntatu
-sudo mount /dev/sdb /media/usb
-if [ $? -ne 0 ]; then
-  echo "Errorea: USB unitatea ezin izan da muntatu."
-  exit 1
+# USBa muntatuta dagoen ala ez egiaztatu
+if mountpoint -q /media/usb; then
+  echo "USB unitatea dagoeneko muntatuta dago."
+else
+  # USB unitatea muntatu
+  sudo mount /dev/sdb /media/usb
+  if [ $? -ne 0 ]; then
+    echo "Errorea: USB unitatea ezin izan da muntatu."
+    exit 1
+  fi
 fi
 
 # Nextcloud-eko segurtasun kopia
