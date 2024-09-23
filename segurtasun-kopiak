@@ -1,0 +1,77 @@
+#!/bin/bash
+
+# Karpetak eta fitxategiak existitzen direla egiaztatu
+if [ ! -e /dev/sdb ]; then
+  echo "Errorea: /dev/sdb ez da existitzen."
+  exit 1
+fi
+
+if [ ! -d /media/usb ]; then
+  echo "Errorea: /media/usb karpeta ez da existitzen."
+  exit 1
+fi
+
+# USB unitatea muntatu
+sudo mount /dev/sdb /media/usb
+if [ $? -ne 0 ]; then
+  echo "Errorea: USB unitatea ezin izan da muntatu."
+  exit 1
+fi
+
+# Nextcloud-eko segurtasun kopia
+# Mantentze modua aktibatu
+sudo -u www-data php /var/www/html/nextcloud/occ maintenance:mode --on
+if [ $? -ne 0 ]; then
+  echo "Errorea: Mantentze modua aktibatzean huts egin du."
+  exit 1
+fi
+
+# Datu-basearen segurtasun kopia
+if [ ! -d /media/usb/backups/nextcloud/database ]; then
+  echo "Errorea: /media/usb/backups/nextcloud/database karpeta ez da existitzen."
+  exit 1
+fi
+
+mysqldump --single-transaction -h localhost -u root -p'BurpeeTech1234' BurpeeTech > /media/usb/backups/nextcloud/database/nextcloud-sqlbkp_`date +"%Y%m%d"`.bak
+if [ $? -ne 0 ]; then
+  echo "Errorea: Datu-basearen segurtasun kopia egitean huts egin du."
+  exit 1
+fi
+
+# Konfigurazio fitxategien segurtasun kopia
+if [ ! -d /media/usb/backups/nextcloud/ncserver ]; then
+  echo "Errorea: /media/usb/backups/nextcloud/ncserver karpeta ez da existitzen."
+  exit 1
+fi
+
+tar -cpzf /media/usb/backups/nextcloud/ncserver/ncserver-databkp_`date +"%Y%m%d"`.tar.gz /var/www/html/nextcloud
+if [ $? -ne 0 ]; then
+  echo "Errorea: Konfigurazio fitxategien segurtasun kopia egitean huts egin du."
+  exit 1
+fi
+
+# Nextcloud datuen segurtasun kopia
+if [ ! -d /media/usb/backups/nextcloud/data ]; then
+  echo "Errorea: /media/usb/backups/nextcloud/data karpeta ez da existitzen."
+  exit 1
+fi
+
+tar -cpzf /media/usb/backups/nextcloud/data/nextcloud-databkp_`date +"%Y%m%d"`.tar.gz /media/nextcloud/data
+if [ $? -ne 0 ]; then
+  echo "Errorea: Datuen segurtasun kopia egitean huts egin du."
+  exit 1
+fi
+
+# Mantentze modua desaktibatu
+sudo -u www-data php /var/www/html/nextcloud/occ maintenance:mode --off
+if [ $? -ne 0 ]; then
+  echo "Errorea: Mantentze modua desaktibatzean huts egin du."
+  exit 1
+fi
+
+# 3 egun baino zaharragoak diren segurtasun kopiak ezabatu
+sudo find /media/usb/backups/nextcloud/database -mtime +3 -exec rm {} \;
+sudo find /media/usb/backups/nextcloud/ncserver -mtime +3 -exec rm {} \;
+sudo find /media/usb/backups/nextcloud/data -mtime +3 -exec rm {} \;
+
+echo "Segurtasun kopia arrakastaz amaitu da."
