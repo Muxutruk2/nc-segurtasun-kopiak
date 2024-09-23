@@ -61,7 +61,7 @@ if [ ! -d /media/usb/backups/nextcloud/data ]; then
   exit 1
 fi
 
-tar -cpzf /media/usb/backups/nextcloud/data/nextcloud-databkp_`date +"%Y%m%d"`.tar.gz /media/nextcloud/data
+tar -cpzf /media/usb/backups/nextcloud/data/nextcloud-databkp_`date +"%Y%m%d"`.tar.gz /media/usb/backups/nextcloud/data
 if [ $? -ne 0 ]; then
   echo "Errorea: Datuen segurtasun kopia egitean huts egin du."
   exit 1
